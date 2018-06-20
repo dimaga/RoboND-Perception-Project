@@ -30,6 +30,7 @@ def get_normals(cloud):
     get_normals_prox = rospy.ServiceProxy('/feature_extractor/get_normals', GetNormals)
     return get_normals_prox(cloud).cluster
 
+
 # Helper function to create a yaml friendly dictionary from ROS messages
 def make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose):
     yaml_dict = {}
@@ -40,21 +41,26 @@ def make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose)
     yaml_dict["place_pose"] = message_converter.convert_ros_message_to_dictionary(place_pose)
     return yaml_dict
 
+
 # Helper function to output to yaml file
 def send_to_yaml(yaml_filename, dict_list):
     data_dict = {"object_list": dict_list}
     with open(yaml_filename, 'w') as outfile:
         yaml.dump(data_dict, outfile, default_flow_style=False)
 
+
 # Callback function for your Point Cloud Subscriber
 def pcl_callback(ros_msg):
-    pcl_cloud = ros_to_pcl(ros_msg)
+    cloud_filtered = ros_to_pcl(ros_msg)
 
-    vox = pcl_cloud.make_voxel_grid_filter()
-    LEAF_SIZE = 0.01
-    vox.set_leaf_size(LEAF_SIZE, LEAF_SIZE, LEAF_SIZE)
-    cloud_filtered = vox.filter()
+    cloud_filtered = filter_vosel_grid(cloud_filtered)
 
+    cloud_filtered = filter_remove_outliers(cloud_filtered)
+
+    ros_msg_cloud_filtered = pcl_to_ros(cloud_filtered)
+    pcl_cluster_cloud_pub.publish(ros_msg_cloud_filtered)
+
+    """
     passthrough = cloud_filtered.make_passthrough_filter()
     filter_axis = 'z'
     passthrough.set_filter_field_name(filter_axis)
@@ -62,6 +68,8 @@ def pcl_callback(ros_msg):
     axis_max = 1.1
     passthrough.set_filter_limits(axis_min, axis_max)
     cloud_filtered = passthrough.filter()
+
+
 
     seg = cloud_filtered.make_segmenter()
     seg.set_model_type(pcl.SACMODEL_PLANE)
@@ -97,10 +105,11 @@ def pcl_callback(ros_msg):
 
     for j, indices in enumerate(cluster_indices):
         for i, indice in enumerate(indices):
-            color_cluster_point_list.append([white_cloud[indice][0],
-                                             white_cloud[indice][1],
-                                             white_cloud[indice][2],
-                                             rgb_to_float(cluster_color[j])])
+            color_cluster_point_list.append([
+                white_cloud[indice][0],
+                white_cloud[indice][1],
+                white_cloud[indice][2],
+                rgb_to_float(cluster_color[j])])
 
     # Create new cloud containing all clusters, each with unique color
     cluster_cloud = pcl.PointCloud_PointXYZRGB()
@@ -159,6 +168,27 @@ def pcl_callback(ros_msg):
     #    pr2_mover(detected_objects_list)
     # except rospy.ROSInterruptException:
     #    pass
+    """
+
+
+def filter_vosel_grid(cloud_filtered):
+    vox = cloud_filtered.make_voxel_grid_filter()
+
+    LEAF_SIZE = 0.005
+    vox.set_leaf_size(LEAF_SIZE, LEAF_SIZE, LEAF_SIZE)
+
+    return vox.filter()
+
+
+def filter_remove_outliers(cloud_filtered):
+    outlier_filter = cloud_filtered.make_statistical_outlier_filter()
+
+    outlier_filter.set_mean_k(7)
+    outlier_filter.set_std_dev_mul_thresh(0.01)
+
+    cloud_filtered = outlier_filter.filter()
+    return cloud_filtered
+
 
 # function to load parameters and request PickPlace service
 def pr2_mover(object_list):
@@ -196,7 +226,6 @@ def pr2_mover(object_list):
             print "Service call failed: %s"%e
 
     # TODO: Output your request parameters into output yaml file
-
 
 
 if __name__ == '__main__':
