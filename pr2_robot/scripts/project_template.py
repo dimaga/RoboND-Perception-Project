@@ -54,32 +54,15 @@ def pcl_callback(ros_msg):
     cloud_filtered = ros_to_pcl(ros_msg)
 
     cloud_filtered = filter_vosel_grid(cloud_filtered)
-
     cloud_filtered = filter_remove_outliers(cloud_filtered)
+    cloud_filtered = filter_passthrough(cloud_filtered)
+    cloud_filtered = filter_remove_table(cloud_filtered)
 
     ros_msg_cloud_filtered = pcl_to_ros(cloud_filtered)
     pcl_cluster_cloud_pub.publish(ros_msg_cloud_filtered)
 
     """
-    passthrough = cloud_filtered.make_passthrough_filter()
-    filter_axis = 'z'
-    passthrough.set_filter_field_name(filter_axis)
-    axis_min = 0.6
-    axis_max = 1.1
-    passthrough.set_filter_limits(axis_min, axis_max)
-    cloud_filtered = passthrough.filter()
 
-
-
-    seg = cloud_filtered.make_segmenter()
-    seg.set_model_type(pcl.SACMODEL_PLANE)
-    seg.set_method_type(pcl.SAC_RANSAC)
-    max_distance = 0.01
-    seg.set_distance_threshold(max_distance)
-
-    inliers, _ = seg.segment()
-    pcl_table = cloud_filtered.extract(inliers, negative=False)
-    pcl_objects = cloud_filtered.extract(inliers, negative=True)
 
     white_cloud = XYZRGB_to_XYZ(pcl_objects)
     tree = white_cloud.make_kdtree()
@@ -171,6 +154,33 @@ def pcl_callback(ros_msg):
     """
 
 
+def filter_remove_table(cloud_filtered):
+    seg = cloud_filtered.make_segmenter()
+    seg.set_model_type(pcl.SACMODEL_PLANE)
+    seg.set_method_type(pcl.SAC_RANSAC)
+
+    max_distance = 0.01
+    seg.set_distance_threshold(max_distance)
+
+    inliers, _ = seg.segment()
+    cloud_filtered = cloud_filtered.extract(inliers, negative=True)
+    return cloud_filtered
+
+
+def filter_passthrough(cloud_filtered):
+    passthrough = cloud_filtered.make_passthrough_filter()
+
+    filter_axis = 'z'
+    passthrough.set_filter_field_name(filter_axis)
+
+    axis_min = 0.6
+    axis_max = 1.1
+
+    passthrough.set_filter_limits(axis_min, axis_max)
+    cloud_filtered = passthrough.filter()
+    return cloud_filtered
+
+
 def filter_vosel_grid(cloud_filtered):
     vox = cloud_filtered.make_voxel_grid_filter()
 
@@ -241,11 +251,13 @@ if __name__ == '__main__':
     object_markers_pub = rospy.Publisher("/object_markers", Marker, queue_size=1)
     detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
 
+    """
     model = pickle.load(open('model.sav', 'rb'))
     clf = model['classifier']
     encoder = LabelEncoder()
     encoder.classes_ = model['classes']
     scaler = model['scaler']
+    """
 
     # Initialize color_list
     get_color_list.color_list = []
