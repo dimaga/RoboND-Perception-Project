@@ -2,6 +2,7 @@
 import numpy as np
 import pickle
 import rospy
+import os.path
 
 from sensor_stick.pcl_helper import *
 from sensor_stick.training_helper import spawn_model
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     for model_name in models:
         spawn_model(model_name)
 
-        for i in range(5):
+        for i in range(100):
             # make five attempts to get a valid a point cloud then give up
             sample_was_good = False
             try_count = 0
@@ -64,6 +65,6 @@ if __name__ == '__main__':
 
         delete_model()
 
-
-    pickle.dump(labeled_features, open('training_set.sav', 'wb'))
+    training_set_path = os.path.join(os.path.dirname(__file__), 'training_set.sav')
+    pickle.dump(labeled_features, open(training_set_path, 'wb'))
 

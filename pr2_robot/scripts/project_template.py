@@ -23,6 +23,7 @@ from std_msgs.msg import String
 from pr2_robot.srv import *
 from rospy_message_converter import message_converter
 import yaml
+import os.path
 
 
 # Helper function to get surface normals
@@ -85,7 +86,6 @@ def pcl_callback(ros_msg):
     ros_msg_cluster_cloud = pcl_to_ros(cluster_cloud)
     pcl_cluster_cloud_pub.publish(ros_msg_cluster_cloud)
 
-    """
     detected_objects_labels = []
     detected_objects = []
 
@@ -131,7 +131,6 @@ def pcl_callback(ros_msg):
     #    pr2_mover(detected_objects_list)
     # except rospy.ROSInterruptException:
     #    pass
-    """
 
 
 def filter_passthrough_vertical(cloud_filtered):
@@ -255,13 +254,13 @@ if __name__ == '__main__':
     object_markers_pub = rospy.Publisher("/object_markers", Marker, queue_size=1)
     detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
 
-    """
-    model = pickle.load(open('model.sav', 'rb'))
+    model_path = os.path.join(os.path.dirname(__file__), 'model.sav')
+    model = pickle.load(open(model_path, 'rb'))
+
     clf = model['classifier']
     encoder = LabelEncoder()
     encoder.classes_ = model['classes']
     scaler = model['scaler']
-    """
 
     # Initialize color_list
     get_color_list.color_list = []
