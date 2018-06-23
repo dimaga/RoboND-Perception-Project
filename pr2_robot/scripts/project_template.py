@@ -53,17 +53,16 @@ def send_to_yaml(yaml_filename, dict_list):
 def pcl_callback(ros_msg):
     cloud_filtered = ros_to_pcl(ros_msg)
 
-    cloud_filtered = filter_vosel_grid(cloud_filtered)
+    cloud_filtered = filter_passthrough_vertical(cloud_filtered)
+    cloud_filtered = filter_passthrough_horizontal(cloud_filtered)
+    cloud_filtered = filter_voxel_grid(cloud_filtered)
     cloud_filtered = filter_remove_outliers(cloud_filtered)
-    cloud_filtered = filter_passthrough(cloud_filtered)
     cloud_filtered = filter_remove_table(cloud_filtered)
 
     ros_msg_cloud_filtered = pcl_to_ros(cloud_filtered)
     pcl_cluster_cloud_pub.publish(ros_msg_cloud_filtered)
 
     """
-
-
     white_cloud = XYZRGB_to_XYZ(pcl_objects)
     tree = white_cloud.make_kdtree()
 
@@ -154,34 +153,7 @@ def pcl_callback(ros_msg):
     """
 
 
-def filter_remove_table(cloud_filtered):
-    seg = cloud_filtered.make_segmenter()
-    seg.set_model_type(pcl.SACMODEL_PLANE)
-    seg.set_method_type(pcl.SAC_RANSAC)
-
-    max_distance = 0.01
-    seg.set_distance_threshold(max_distance)
-
-    inliers, _ = seg.segment()
-    cloud_filtered = cloud_filtered.extract(inliers, negative=True)
-    return cloud_filtered
-
-
-def filter_passthrough(cloud_filtered):
-    passthrough = cloud_filtered.make_passthrough_filter()
-
-    filter_axis = 'z'
-    passthrough.set_filter_field_name(filter_axis)
-
-    axis_min = 0.6
-    axis_max = 1.1
-
-    passthrough.set_filter_limits(axis_min, axis_max)
-    cloud_filtered = passthrough.filter()
-    return cloud_filtered
-
-
-def filter_vosel_grid(cloud_filtered):
+def filter_voxel_grid(cloud_filtered):
     vox = cloud_filtered.make_voxel_grid_filter()
 
     LEAF_SIZE = 0.005
@@ -197,6 +169,47 @@ def filter_remove_outliers(cloud_filtered):
     outlier_filter.set_std_dev_mul_thresh(0.01)
 
     cloud_filtered = outlier_filter.filter()
+    return cloud_filtered
+
+
+def filter_passthrough_vertical(cloud_filtered):
+    passthrough = cloud_filtered.make_passthrough_filter()
+
+    filter_axis = 'z'
+    passthrough.set_filter_field_name(filter_axis)
+
+    axis_min = 0.6
+    axis_max = 0.9
+
+    passthrough.set_filter_limits(axis_min, axis_max)
+    cloud_filtered = passthrough.filter()
+    return cloud_filtered
+
+
+def filter_passthrough_horizontal(cloud_filtered):
+    passthrough = cloud_filtered.make_passthrough_filter()
+
+    filter_axis = 'x'
+    passthrough.set_filter_field_name(filter_axis)
+
+    axis_min = 0.3
+    axis_max = 0.9
+
+    passthrough.set_filter_limits(axis_min, axis_max)
+    cloud_filtered = passthrough.filter()
+    return cloud_filtered
+
+
+def filter_remove_table(cloud_filtered):
+    seg = cloud_filtered.make_segmenter()
+    seg.set_model_type(pcl.SACMODEL_PLANE)
+    seg.set_method_type(pcl.SAC_RANSAC)
+
+    max_distance = 0.01
+    seg.set_distance_threshold(max_distance)
+
+    inliers, _ = seg.segment()
+    cloud_filtered = cloud_filtered.extract(inliers, negative=True)
     return cloud_filtered
 
 
