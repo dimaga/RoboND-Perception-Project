@@ -85,6 +85,12 @@ According to ```output_*.yaml``` and screenshots that follow, my perception code
 ![test2](./images/test2.png)
 ![test3](./images/test3.png)
 
+#### Ideas on further enhancements
 
+* After detecting table plane by RANSAC algorithm, remove all points that are below it. This should be more robust than
+hard-coded pass-through filter values
 
+* In addition to point normals, consider using more advanced point features from PCL library. See details in https://github.com/PointCloudLibrary/pcl/wiki/Overview-and-Comparison-of-Features
+
+* For more challenging cases with more noise and more diverse object classes, consider using deep learning approach, similar to VoxelNet: https://github.com/PointCloudLibrary/pcl/wiki/Overview-and-Comparison-of-Features
 
