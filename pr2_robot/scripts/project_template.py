@@ -218,16 +218,19 @@ def pr2_mover(object_list):
     test_scene_num = Int32()
     test_scene_num.data = int(rospy.get_param("scene_number"))
 
-    name_group = { o['name'] : o['group'] for o in rospy.get_param('/object_list') }
+    labelled_cloud = { str(object.label) : object.cloud for object in object_list }
     group_pos = { d['group'] : d['position'] for d in rospy.get_param('/dropbox')}
 
     # TODO: Rotate PR2 in place to capture side tables for the collision map
 
     dict_list = []
-    for object in object_list:
-        group = name_group.get(object.label)
-        if group is None:
+    for o in rospy.get_param('/object_list'):
+        name = o['name']
+        cloud = labelled_cloud[o['name']]
+        if cloud is None:
             continue
+
+        group = o['group']
 
         arm_name = String()
         if group == "green":
@@ -244,7 +247,7 @@ def pr2_mover(object_list):
         place_pose.position.z = float(group_pos_value[2])
         place_pose.orientation.w = 1.0
 
-        points_arr = ros_to_pcl(object.cloud).to_array()
+        points_arr = ros_to_pcl(cloud).to_array()
         centroid_np = np.mean(points_arr, axis=0)[:3]
 
         pick_pose = Pose()
@@ -254,7 +257,7 @@ def pr2_mover(object_list):
         pick_pose.orientation.w = 1.0
 
         object_name = String()
-        object_name.data = str(object.label)
+        object_name.data = name
 
         # Wait for 'pick_place_routine' service to come up
         rospy.wait_for_service('pick_place_routine')
