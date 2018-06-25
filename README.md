@@ -57,8 +57,9 @@ The colored clusters are dumped into ```/pcl_cluster``` channel.
 
 To extract features for object recognition, ```pcl_callback()``` from ```project_template.py``` calls
 ```compute_color_histograms()``` and ```compute_normal_histograms``` of ```sensor_stick.features```, implemented 
-within the scope of RoboND-Peception-Exercises. The file is available in my separate GitHub repository, in 
-https://github.com/dimaga/RoboND-Perception-Exercises/blob/master/Exercise-3/sensor_stick/src/sensor_stick/features.py
+in ```features.py```. For a project review, the file has been copied into
+```RoboND-Perception-Project/pr2_robot/scripts``` folder. However, for correct work, it should reside in
+```src/sensor_stick/src/sensor_stick``` of catkin workspace.
 
 * ```compute_normal_histograms()``` returns normalized histograms of three normal coordinates: x, y and z.
 

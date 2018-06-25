@@ -33,7 +33,7 @@ def get_normals(cloud):
 
 
 # Helper function to create a yaml friendly dictionary from ROS messages
-def make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose):
+def make_yaml_dict(test_scene_num, object_name, arm_name, pick_pose, place_pose):
     yaml_dict = {}
     yaml_dict["test_scene_num"] = test_scene_num.data
     yaml_dict["arm_name"]  = arm_name.data
